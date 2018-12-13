@@ -1,0 +1,14 @@
+{
+  "logsfile": false,
+  "logs_screen": true, 
+  "interval_check" : {
+    "cameras": 60000,
+    "cdn": 60000,
+    "nvr": 300000 
+  },
+  "base_dir": "/home/sysadmin/cam9",
+  "log_server": {
+    "port": 443,
+    "host": "logs.cam9.tv"
+  }
+}
