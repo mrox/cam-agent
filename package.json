@@ -1,6 +1,6 @@
 {
   "name": "cam-agent",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "tuyentt - phucdt",
   "main": "webpack.config.js",
   "directories": {
