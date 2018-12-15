@@ -12,6 +12,9 @@ class CdnControler {
             this.cdnPath = cdnModule.path();
             this.check();
             setInterval(this.check.bind(this), config.interval_check.cdn)
+        }else {
+            logger.error("CANNOT FIND MODULE NAMCDN, EXISTING APP ...")
+            process.exit(0);
         }
 
     }
@@ -24,7 +27,7 @@ class CdnControler {
             local = fs.readFileSync(path, 'utf-8');
             local = local ? JSON.stringify(JSON.parse(local)) : "";
         } catch (error) {
-            logger.error(`Loi: ${error.message}`);
+            logger.error(`ERROR: ${error.message}`);
             process.exit(1)
             // return;
         }

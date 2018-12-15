@@ -14,7 +14,7 @@ export const getLiveStatCamera = async () => {
         }
         return rt
     } catch (error) {
-        logger.error("CANNOT GET localhost/live/stat")
+        logger.error("CANNOT GET http://127.0.0.1/live/stat/")
         return null;
     }
 }
