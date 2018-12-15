@@ -64,12 +64,12 @@ class NVR {
 
     async loadCameras() {
         const cameras = await getCamerasFromCMS(this.macAddress)
-        this.cameras = new Map(cameras.map(c => [c.mac, new Camera(c)]));
+        if(cameras) this.cameras = new Map(cameras.map(c => [c.mac, new Camera(c)]));
     }
 
     async loadModules() {
         var modules = await getModules(this.macAddress);
-        this.modules = modules.map(m => new Module(m))
+        if(modules) this.modules = modules.map(m => new Module(m))
     }
 }
 

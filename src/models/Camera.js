@@ -23,8 +23,8 @@ class Camera extends CamAgent {
 
     async checkSyncTime() {
         const nvrTime = new Date();
-
-        if (this.isPtz) {
+        const isPtz = await this.isPtz();
+        if (isPtz) {
             const cam = new Cam({
                 hostname: this.ip, 
                 username: this.username, 

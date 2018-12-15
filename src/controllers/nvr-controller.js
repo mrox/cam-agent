@@ -28,7 +28,7 @@ class NvrController {
     }
 
     async checkNVR() {
-        const { mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, ipWan } = await this.nvr.getInfo();
+        const { mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, ipWan , cpu} = await this.nvr.getInfo();
         const { arch, systemType, firmwareVersion } = this.nvr.getInitÌnfo();
         const { macAddress, ipLan } = this.nvr;
 
@@ -119,9 +119,11 @@ class NvrController {
                 disk.used += fs.used;
             }
         })
-
+        const { manufacturer, brand, speed } = cpu
+    
         let logObject = {
             '@cpu': currentLoad.currentload,
+            '@cpu_name': `${manufacturer} ${brand} @ ${speed}GHz`,
             '@memory': mem.used * 100 / mem.total,
             '@temperature': cpuTemperature || 0,
             '@fs_size': _.meanBy(fsSize, o => o.use) || 0,

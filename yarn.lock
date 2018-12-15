@@ -2093,7 +2093,7 @@ callsite@1.0.0:
 
 "cam-agent@https://phucdo1711:phuc74125@github.com/mrox/camera-agent.git":
   version "0.0.4"
-  resolved "https://phucdo1711:phuc74125@github.com/mrox/camera-agent.git#3a4c9449b248198f268cd858fd51471b09f5a808"
+  resolved "https://phucdo1711:phuc74125@github.com/mrox/camera-agent.git#4f1d4c1cd1212d88a97bc085a44591d7206f4ffd"
   dependencies:
     axios "^0.18.0"
     babel-polyfill "^6.26.0"

@@ -24,7 +24,7 @@ module.exports = {
   output: {
     path: __dirname + "/dist",
     publicPath: "/",
-    filename: "app.js"
+    filename: "CamAgent.js"
   },
   optimization: {
     minimizer: [new TerserPlugin()]

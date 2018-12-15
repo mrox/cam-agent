@@ -6,7 +6,7 @@ export const getNvrInfo = async (mac) => {
     try {
         nvr = await get(`/server/getDetail?device_id=${mac}`);
     } catch (error) {
-        logger.error(`Get NVR info FAILED - ${error.message}`)
+        logger.error(`GET NVR INFO FROM FAILED - ${error.message}`)
     }
 
     return nvr;
@@ -17,7 +17,7 @@ export const updateStatusOfNvr = async  (data) => {
         const rs = await post('/healthchecker/update', data)
         logger.info("UPDATED NVR INFO")
     } catch (error) {
-        logger.error(`Update NVR info FAILED - ${error.message}`)
+        logger.error(`UPDATE NVR INFO TO CMS FAILED - ${error.message}`)
     }
 }
 
@@ -28,7 +28,7 @@ export const updateOnlineStatusCamera = async (mac) => {
         
         else logger.error("Cannot camera status to server.")
     } catch (error) {
-        logger.error(`Update Camera status FAILED - ${error.message}`)
+        logger.error(`UPDATE CAMERA ${mac} ONLINE TO CMS FAILED - ${error.message}`)
     }
 }
 
@@ -38,7 +38,7 @@ export const updateCameraIp = async (nvrMac, newIp, camMac) => {
         if(rs.message === "Success") logger.info(`UPDATED IP OF CAMERA ${camMac}: ${newIp}`);
         else logger.error(`UPDATED IP OF CAMERA ${camMac} FAILED`);
     } catch (error) {
-        logger.error(`CAN'T UPDATE IP ${newIp} OF CAMERA ${camMac} TO CMS SERVER`)
+        logger.error(`CAN'T UPDATE IP ${newIp} OF CAMERA ${camMac} TO CMS`)
     }
 }
 
@@ -47,7 +47,7 @@ export const getTokenByNvrMac = async (mac) => {
         const rs = await get(`/getToken?device_id=${mac}`);
         if(rs.token) return rs.token;
     } catch (error) {
-        logger.error(`GET TOKEN OF NVR MAC FAILED - ${error.message}`)
+        logger.error(`GET TOKEN OF NVR MAC FROM CMS FAILED - ${error.message}`)
     }
 }
 
@@ -56,7 +56,7 @@ export const getCdnController = async (nvrMac) => {
         const rs = await get(`/get_cdn_controller?nvr_device_id=${nvrMac}`);
         return rs;
     } catch (error) {
-        logger.error(`Get CDN controller FAILED - ${error.message}`)        
+        logger.error(`GET CDN CONTROLLER FROM CMS FAILED - ${error.message}`)        
         return null;
     }
 }  
@@ -72,7 +72,8 @@ export const getModules = async (nvrMac) => {
         }})
         return modules;
     } catch (error) {
-        logger.error("CANNOT GET MODULES")
+        logger.error(`GET MODULES FROM CMS FAILED - ${error.message}`)
+        return null;
     }
 }
 
@@ -86,6 +87,7 @@ export const getCamerasFromCMS = async (nvrMac) => {
         
         return cameras;
     } catch (error) {
-        logger.error("CANNOT GET CAMERAS")        
+        logger.error(`GET CAMERAS FROM CMS FAILED - ${error.message}`)     
+        return null;   
     }
 }
