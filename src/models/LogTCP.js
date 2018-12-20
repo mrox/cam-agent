@@ -26,7 +26,6 @@ class LogTCP {
 
         this.logObject = {
             '@version': `${pkg.name}@^${pkg.version}`,
-            '@timestamp': (new Date()).toISOString(),
             type: 'MONITOR_RESOURCE_NVR',
             '@appId': `${pkg.name}@^${pkg.version}`,
             // '@appId': 'Monitor@^1.0.3',
@@ -38,6 +37,7 @@ class LogTCP {
     log(obj, level) {
         if(!this.isConnected) return;
         obj.level = level
+        obj['@timestamp'] = (new Date()).toISOString(),
         obj = Object.assign(obj, this.logObject);
         this.tcp.write(JSON.stringify(obj) + '\n', (err) => {
             if (err) logger.error(`CANNOT SEND LOG TCP: ${err}`)

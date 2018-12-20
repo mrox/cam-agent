@@ -123,7 +123,7 @@ class NvrController {
     
         let logObject = {
             '@cpu': currentLoad.currentload,
-            '@cpu_name': `${manufacturer} ${brand} @ ${speed}GHz`,
+            '@cpu_name': `${manufacturer || ''} ${brand || ''} @ ${speed}GHz`.trim(),
             '@memory': mem.used * 100 / mem.total,
             '@temperature': cpuTemperature || 0,
             '@fs_size': _.meanBy(fsSize, o => o.use) || 0,
