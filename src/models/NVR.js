@@ -1,21 +1,26 @@
-import axios from 'axios';
 import si from 'systeminformation';
 import os from 'os';
 import Camera from './Camera';
 import { getModules, getTokenByNvrMac, getCamerasFromCMS } from '../api/cms-api';
-import { getDefaultIface, getMac, getFirmwareVersion, getCpuTemperature, getFfmpegCounter } from '../utils/shell-methods';
+import { getDefaultIface, getMac, getFirmwareVersion, getFfmpegCounter } from '../utils/shell-methods';
 import config from '../config';
 import Module from '../models/Module';
+import logger from '../utils/logger';
 
 class NVR {
     constructor() {
-        this.defaultIface = getDefaultIface();
         // const macAddress = 'a8:17:02:bc:ca:04';
-        this.macAddress = getMac(this.defaultIface);
+        try {
+            this.defaultIface = getDefaultIface();
+            this.macAddress = getMac(this.defaultIface);
+        } catch (error) {
+            logger.error("Error: " + error.message)
+            process.exit(0)
+        }
 
         return (async () => {
             this.ifaces = await si.networkInterfaces().then(ifaces => ifaces.filter(({ internal, ip4 }) => !internal && !!ip4))
-            
+
             const { ip4 } = this.ifaces.find(({ iface }) => iface === this.defaultIface);
             this.ipLan = ip4;
             // await this.loadInfo();
@@ -50,26 +55,29 @@ class NVR {
     }
 
     async getInfo() {
-        // console.log("LOAD INFO NVR")
-        const currentLoad = await si.currentLoad()
-        const mem = await si.mem();
-        const fsSize = await si.fsSize()
-        const cpu = await si.cpu();
-        const cpuTemperature = getCpuTemperature()
-        const ffmpegCounter = getFfmpegCounter()
-        const ipWan = await axios.get('https://api.ipify.org/?format=text').then(rs => rs.data)
+        var cpuTemperature, ffmpegCounter, currentLoad, mem, fsSize, cpu;
+        try {
+            currentLoad = await si.currentLoad()
+            mem = await si.mem();
+            fsSize = await si.fsSize()
+            cpu = await si.cpu();
+            cpuTemperature = await si.cpuTemperature().then(rs => rs.main)
+            ffmpegCounter = getFfmpegCounter()
+        } catch (error) {
+            logger.error(error.message)
+        }
 
-        return { currentLoad, mem, cpuTemperature, fsSize, ffmpegCounter, cpu, ipWan }
+        return { currentLoad, mem, cpuTemperature, fsSize, ffmpegCounter, cpu }
     }
 
     async loadCameras() {
         const cameras = await getCamerasFromCMS(this.macAddress)
-        if(cameras) this.cameras = new Map(cameras.map(c => [c.mac, new Camera(c)]));
+        if (cameras) this.cameras = new Map(cameras.map(c => [c.mac, new Camera(c)]));
     }
 
     async loadModules() {
         var modules = await getModules(this.macAddress);
-        if(modules) this.modules = modules.map(m => new Module(m))
+        if (modules) this.modules = modules.map(m => new Module(m))
     }
 }
 

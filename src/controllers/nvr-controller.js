@@ -28,7 +28,7 @@ class NvrController {
     }
 
     async checkNVR() {
-        const { mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, ipWan , cpu} = await this.nvr.getInfo();
+        const { mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter , cpu} = await this.nvr.getInfo();
         const { arch, systemType, firmwareVersion } = this.nvr.getInitÌnfo();
         const { macAddress, ipLan } = this.nvr;
 
@@ -141,9 +141,6 @@ class NvrController {
             size: nandInfoRaw.size,
             used: nandInfoRaw.used
         }
-
-        if (ipWan) logObject['@ip_wan'] = ipWan
-
         this.logTCP.log(logObject, 'info')
     }
 }

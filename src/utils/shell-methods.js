@@ -9,9 +9,7 @@ function exec(src) {
         return rs.trim()
 
     } catch (error) {
-        console.error("EXIT APP, BYE!!!")
-        // console.error(error.message);
-        process.exit(0);
+        throw new Error(error.message)
     }
 }
 
@@ -36,6 +34,6 @@ export const getIpsMac = (ifaces) => {
 
 export const getFirmwareVersion = () => exec('cat /etc/issue');
 
-export const getCpuTemperature = () => exec('cat /sys/class/thermal/thermal_zone0/temp | cut -c 1-2');
+// export const getCpuTemperature = () => exec('cat /sys/class/thermal/thermal_zone0/temp | cut -c 1-2');
 
 export const getFfmpegCounter = () => Number(exec('ps ax -no-heading | grep ffmpeg | grep -v grep | wc -l'))

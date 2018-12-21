@@ -45,6 +45,10 @@ const config = {
     onvifSocket: onvif_socket || api.replace('/api', ''),
     log: !!LOG,
     type: url.includes('cam9') ? 'cam9' : 'vcam',
+    log_server: {
+        port: 443,
+        host: api.replace(/^http(s?):\/\/core/i, 'logs').replace('/api', '')
+    }
 }
 
 export {

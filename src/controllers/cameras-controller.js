@@ -32,10 +32,10 @@ class CamerasController {
         }
         this.isScanning = true;
 
-        const ipsMac = getIpsMac(this.nvr.ifaces);
-        var chanelsByIp;
+        var chanelsByIp, ipsMac;
 
         try {
+            ipsMac = getIpsMac(this.nvr.ifaces);
             chanelsByIp = parseCmdLocal(this.cmdLocalPath);  
         } catch (error) {
             logger.error(`ERROR: ${error}`);
