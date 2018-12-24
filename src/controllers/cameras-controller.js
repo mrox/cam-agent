@@ -53,13 +53,14 @@ class CamerasController {
         // const lives = null;
         await asyncForEach(this.nvr.getCameras(), async cam => {
             var foundCam = ipsMac.find(c => c.mac === cam.mac) || {};
+            // IF found ip of the camera by mac AND new IP different from old IP THEN update new IP to CMS
             if (!!foundCam.ip && cam.ip != foundCam.ip) {
                 cam.setIp(foundCam.ip);
                 await updateCameraIp(this.nvr.macAddress, cam.ip, cam.mac);
             }
             cam.updateInfo(chanelsByIp[cam.ip])
-            logger.debug(cam.username)
-            logger.debug(cam.password)
+            
+            //Check chanel of camera
             const camStatus = !!lives && lives[cam.chanel]
 
             if (cam.isOnline() && camStatus) {
