@@ -19,12 +19,12 @@ class NvrController {
         await this.checkNVR();
         setInterval(this.checkNVR.bind(this), config.interval_check.nvr);
         //INIT LOG      
-        const { arch, systemType, firmwareVersion } = this.nvr.getInitÌnfo();
-        this.logTCP.log({
-            '@arch': arch,
-            '@system_type': systemType,
-            '@firmware_version': firmwareVersion,
-        }, 'info')
+        // const { arch, systemType, firmwareVersion } = this.nvr.getInitÌnfo();
+        // this.logTCP.log({
+        //     '@arch': arch,
+        //     '@system_type': systemType,
+        //     '@firmware_version': firmwareVersion,
+        // }, 'info')
     }
 
     async checkNVR() {
@@ -85,8 +85,6 @@ class NvrController {
             data_info
         }
         await updateStatusOfNvr(systemInfo);
-
-        if (!this.logTCP.isConnected) return;
 
         await this.nvr.loadModules();
         var onlineModules = []

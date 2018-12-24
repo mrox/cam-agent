@@ -44,7 +44,7 @@ class CdnControler {
                 if (rs.success) logger.info("KILLED NAMCDN")
                 else logger.error("CANNOT KILL NAMCDN")
             } catch (error) {
-                console.error(error.message);
+                logger.error(error.message);
             }
         }
     }

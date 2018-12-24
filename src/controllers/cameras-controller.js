@@ -39,7 +39,8 @@ class CamerasController {
             chanelsByIp = parseCmdLocal(this.cmdLocalPath);  
         } catch (error) {
             logger.error(`ERROR: ${error}`);
-            process.exit(1);
+            this.isScanning = false;
+            return 
         }
         //GET locahost/live/stat
         // const lives = null;
