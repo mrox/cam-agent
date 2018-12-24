@@ -32,7 +32,7 @@ class CamerasController {
         }
         this.isScanning = true;
 
-        var chanelsByIp, ipsMac;
+        var chanelsByIp, ipsMac,lives;
 
         try {
             ipsMac = getIpsMac(this.nvr.ifaces);
@@ -42,9 +42,15 @@ class CamerasController {
             this.isScanning = false;
             return 
         }
-        //GET locahost/live/stat
+
+        try {
+            lives = await getLiveStatCamera();
+        } catch (error) {
+            logger.error(error.message)
+            lives = null;
+        }
+        // GET locahost/live/stat
         // const lives = null;
-        const lives = await getLiveStatCamera();
         await asyncForEach(this.nvr.getCameras(), async cam => {
             var foundCam = ipsMac.find(c => c.mac === cam.mac) || {};
             if (!!foundCam.ip && cam.ip != foundCam.ip) {

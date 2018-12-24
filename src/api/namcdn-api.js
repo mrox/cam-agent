@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { checkStatus } from '../utils/request';
-import logger from '../utils/logger';
 
 export const getLiveStatCamera = async () => {
+    var url = 'http://127.0.0.1/live/stat/'
     try {
-        var rs = await axios.get('http://127.0.0.1/live/stat/');
+        var rs = await axios.get(url);
         var pattern = /chn>(.*?)\s.*?pos:(.*?)\s/ig
         var str = checkStatus(rs);
         var e;
@@ -14,7 +14,6 @@ export const getLiveStatCamera = async () => {
         }
         return rt
     } catch (error) {
-        logger.error("CANNOT GET http://127.0.0.1/live/stat/")
-        return null;
+        throw new Error(`CANNOT GET ${url}, ${error.message}`)
     }
 }
