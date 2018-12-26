@@ -2811,6 +2811,11 @@ dir-glob@^2.0.0:
     arrify "^1.0.1"
     path-type "^3.0.0"
 
+diskspace@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/diskspace/-/diskspace-2.0.0.tgz#fde3b88d5cd5e15d097bb42e550733e2588cc913"
+  integrity sha1-/eO4jVzV4V0Je7QuVQcz4liMyRM=
+
 disparity@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/disparity/-/disparity-2.0.0.tgz#57ddacb47324ae5f58d2cc0da886db4ce9eeb718"

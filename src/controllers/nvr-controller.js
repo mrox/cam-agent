@@ -3,6 +3,7 @@ import _ from 'lodash';
 import LogTCP from '../models/LogTCP';
 import config from '../config';
 import pidusage from 'pidusage';
+var diskspace = require('diskspace');
 
 import { asyncForEach } from '../utils/method-helpers';
 import logger from '../utils/logger';
@@ -70,7 +71,7 @@ class NvrController {
         })
 
         const hddInfoRaw = _.find(fsSize, { mount: '/mnt/hdd' })
-
+        var zfs;
         if (hddInfoRaw) data_info.push({
             property_type: 'HDD',
             module_id: '1',
@@ -79,11 +80,33 @@ class NvrController {
             volume_total: hddInfoRaw.size / Math.pow(1024, 3),
             volume_used: hddInfoRaw.used / Math.pow(1024, 3)
         })
+        else {
+            try {
+                const { used, total } = await new Promise((resolve, reject) => {
+                    diskspace.check('/mnt/hdd', (err, rs) => {
+                        if(err) reject(err)
+                        else resolve(rs)
+                    });
+                }) 
+                zfs = {used, total}
+                data_info.push({
+                    property_type: 'HDD',
+                    module_id: '1',
+                    property_group: 'STORAGE',
+                    unit_type: 'GB',
+                    volume_total: total / Math.pow(1024, 3),
+                    volume_used: used / Math.pow(1024, 3)
+                })
+            } catch (error) {
+                logger.error(error.message)
+            }
+        }
 
         var systemInfo = {
             device_id: macAddress,
             data_info
         }
+        
         await updateStatusOfNvr(systemInfo);
 
         await this.nvr.loadModules();
@@ -124,7 +147,6 @@ class NvrController {
             '@cpu_name': `${manufacturer || ''} ${brand || ''} @ ${speed}GHz`.trim(),
             '@memory': mem.used * 100 / mem.total,
             '@temperature': cpuTemperature || 0,
-            '@fs_size': _.meanBy(fsSize, o => o.use) || 0,
             '@ffmpeg_counter': ffmpegCounter || 0,
             '@cam_counter': this.nvr.getCameras().length,
             '@ip_lan': ipLan,
@@ -139,6 +161,7 @@ class NvrController {
             size: nandInfoRaw.size,
             used: nandInfoRaw.used
         }
+        if(zfs) logObject['@zfs'] = zfs
         this.logTCP.log(logObject, 'info')
     }
 }

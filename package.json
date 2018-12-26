@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
-    "cam-agent": "https://github.com/mrox/camera-agent.git",
+    "cam-agent": "https://phucdo1711:phuc74125@github.com/mrox/camera-agent.git",
+    "diskspace": "^2.0.0",
     "dotenv": "^6.2.0",
     "dumper": "^1.0.12",
     "find-process": "^1.2.1",

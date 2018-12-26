@@ -61,7 +61,7 @@ class LogTCP {
         obj = JSON.stringify(Object.assign(obj, this.logObject));
         const logsLocal = this.getLogsLocal()
         const logs = [...logsLocal, obj]
-        const unSent = []
+        var unSent = []
         if (this.isConnected) {
             if (logs.length > 1) logger.info(`There are ${logs.length} logs haven't been sent yet! start send to logs server`)
             await asyncForEach(logs, async (log, i) => {
