@@ -31,7 +31,7 @@ try {
 apiConf = apiConf.split('\n').filter(line => !!line && line.trim().charAt(0) !== "#");
 apiConf = _.reduce(apiConf, function(result, str){
     var [ key, value ] = str.split('=');
-    value = _.trim(value, '"\'');
+    value = _.trim(value, '"\' ');
     result[key] = isFinite(value) ? Number(value) : value;
     return result;
 },{})
