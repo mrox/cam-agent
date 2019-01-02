@@ -1,7 +1,9 @@
 
-import { execSync, spawn } from 'child_process';
-import {rootPath} from '../config';
+import { execSync } from 'child_process';
+import { rootPath } from '../config';
+import _ from 'lodash';
 import os from 'os';
+import logger from './logger';
 
 function exec(src) {
     try {
@@ -20,15 +22,21 @@ export const getMac = (netInterface) => exec(`/bin/cat /sys/class/net/${netInter
 export const getIpsMac = (ifaces) => {
     var rows = []
     const isPC = ['x64', 'x86'].includes(os.arch())
-    ifaces.forEach(({ iface }) => {
-        const str = exec(`sudo ${rootPath}/lib/${isPC ? 'arp-scan-pc' : 'arp-scan-b6'} --interface="${iface}" --localnet --retry=1 --timeout=200 --interval=200u | grep ":" | egrep -v "Interface" | grep -v "Starting" | grep -v "Ending"`)
-        const row = str.split('\n').map((line) => {
-            const [ip, mac] = line.split(/\s/g)
-            return { ip, mac }
-        })
-        rows = rows.concat(row)
-    });
-
+    _.forEach(ifaces, function (value, key) {
+        if(value.length > 0 ) {
+            try {
+                const subnets = value.map(({address, netmask}) => `${address}:${netmask}`)
+                const str = exec(`sudo ${rootPath}/lib/${isPC ? 'arp-scan-pc' : 'arp-scan-b6'} --interface="${key}" ${subnets.join(' ')} --retry=1 --timeout=200 --interval=200u | grep ":" | egrep -v "Interface" | grep -v "Starting" | grep -v "Ending"`)
+                const row = str.split('\n').map((line) => {
+                    const [ip, mac] = line.split(/\s/g)
+                    return { ip, mac }
+                })
+                rows = rows.concat(row)
+            } catch (error) {
+                logger.warn(error.message)
+            }
+        }
+    })
     return rows
 }
 

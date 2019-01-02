@@ -4,6 +4,7 @@ import { getLiveStatCamera } from '../api/namcdn-api';
 import { config } from '../config';
 import { getIpsMac } from '../utils/shell-methods';
 import logger from '../utils/logger';
+import os from 'os';
 
 class CamerasController {
     constructor(nvr) {
@@ -34,8 +35,12 @@ class CamerasController {
 
         var chanelsByIp, ipsMac,lives;
 
+        var ifaces = _.mapValues(os.networkInterfaces(),(value) => {
+            return value.filter(({family, internal}) =>!internal && family === 'IPv4')
+        })
+        
         try {
-            ipsMac = getIpsMac(this.nvr.ifaces);
+            ipsMac = getIpsMac(ifaces);
             chanelsByIp = parseCmdLocal(this.cmdLocalPath);  
         } catch (error) {
             logger.error(`ERROR: ${error}`);

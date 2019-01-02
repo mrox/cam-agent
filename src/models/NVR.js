@@ -10,19 +10,20 @@ import logger from '../utils/logger';
 class NVR {
     constructor() {
         // const macAddress = 'a8:17:02:bc:ca:04';
+        var defaultIface
         try {
-            this.defaultIface = getDefaultIface();
-            this.macAddress = getMac(this.defaultIface);
+            defaultIface = getDefaultIface();
+            this.macAddress = getMac(defaultIface);
         } catch (error) {
             logger.error("Error: " + error.message)
             process.exit(0)
         }
 
         return (async () => {
-            this.ifaces = await si.networkInterfaces().then(ifaces => ifaces.filter(({ internal, ip4 }) => !internal && !!ip4))
+            const ifaces = os.networkInterfaces();
 
-            const { ip4 } = this.ifaces.find(({ iface }) => iface === this.defaultIface);
-            this.ipLan = ip4;
+            const { address } = ifaces[defaultIface].find(({family}) => family === 'IPv4') || {};
+            this.ipLan = address;
             // await this.loadInfo();
             await this.loadCameras();
             await this.loadModules();
