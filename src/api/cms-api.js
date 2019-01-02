@@ -64,13 +64,16 @@ export const getCdnController = async (nvrMac) => {
 export const getModules = async (nvrMac) => {
     try {
         const rs = await get(`/module?action=get_latest_version&device_id_server=${nvrMac}`);
-        const modules = rs.replace('EOF\n', '').split('EOL\n')
-        .map(line => {
-            const [id, command, name, version, date, link, os, cpu] = line.split(";")
-            return{
-            id, command, name, version, date, link, os, cpu
-        }})
-        return modules;
+        if(typeof rs === 'string'){
+            const modules = rs.replace('EOF\n', '').split('EOL\n')
+            .map(line => {
+                const [id, command, name, version, date, link, os, cpu] = line.split(";")
+                return{
+                id, command, name, version, date, link, os, cpu
+            }})
+            return modules;
+        }else if(typeof rs === 'object' && !!rs.error) 
+            throw new Error(rs.message)
     } catch (error) {
         logger.error(`GET MODULES FROM CMS FAILED - ${error.message}`)
         return null;

@@ -21,7 +21,7 @@ export const getIpsMac = (ifaces) => {
     var rows = []
     const isPC = ['x64', 'x86'].includes(os.arch())
     ifaces.forEach(({ iface }) => {
-        const str = exec(`sudo ${rootPath}/lib/${isPC ? 'arp-scan-pc' : 'arp-scan-b6'} --interface="${iface}" --localnet --retry=3 | grep ":" | egrep -v "Interface" | grep -v "Starting" | grep -v "Ending"`)
+        const str = exec(`sudo ${rootPath}/lib/${isPC ? 'arp-scan-pc' : 'arp-scan-b6'} --interface="${iface}" --localnet --retry=1 --timeout=200 --interval=200u | grep ":" | egrep -v "Interface" | grep -v "Starting" | grep -v "Ending"`)
         const row = str.split('\n').map((line) => {
             const [ip, mac] = line.split(/\s/g)
             return { ip, mac }

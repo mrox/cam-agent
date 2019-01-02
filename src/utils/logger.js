@@ -4,7 +4,7 @@ import "winston-daily-rotate-file";
 import fs from "fs";
 import { dumper } from "dumper";
 
-const logDir = `${rootPath}/logs`;
+const logDir = `${rootPath}/log`;
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
 }
