@@ -1,7 +1,7 @@
 
 import { execSync } from 'child_process';
 import { rootPath } from '../config';
-import _ from 'lodash';
+import forEach from 'lodash/forEach';
 import os from 'os';
 import logger from './logger';
 
@@ -22,7 +22,7 @@ export const getMac = (netInterface) => exec(`/bin/cat /sys/class/net/${netInter
 export const getIpsMac = (ifaces) => {
     var rows = []
     const isPC = ['x64', 'x86'].includes(os.arch())
-    _.forEach(ifaces, function (value, key) {
+    forEach(ifaces, function (value, key) {
         if(value.length > 0 ) {
             try {
                 const subnets = value.map(({address, netmask}) => `${address}:${netmask}`)

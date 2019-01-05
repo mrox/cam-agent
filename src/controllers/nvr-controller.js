@@ -1,5 +1,6 @@
 import { updateStatusOfNvr } from '../api/cms-api';
-import _ from 'lodash';
+import find from 'lodash/find';
+import forEach from 'lodash/forEach'
 import LogTCP from '../models/LogTCP';
 import config from '../config';
 import pidusage from 'pidusage';
@@ -60,7 +61,7 @@ class NvrController {
             }))
         ]
 
-        const nandInfoRaw = _.find(fsSize, { fs: '/dev/data' });
+        const nandInfoRaw = find(fsSize, { fs: '/dev/data' });
         if (nandInfoRaw) data_info.push({
             property_type: "NAND",
             module_id: '1',
@@ -70,7 +71,7 @@ class NvrController {
             volume_used: nandInfoRaw.used / Math.pow(1024, 3)
         })
 
-        const hddInfoRaw = _.find(fsSize, { mount: '/mnt/hdd' })
+        const hddInfoRaw = find(fsSize, { mount: '/mnt/hdd' })
         var zfs;
         if (hddInfoRaw) data_info.push({
             property_type: 'HDD',
@@ -133,7 +134,7 @@ class NvrController {
             used: 0,
             count: 0
         }
-        _.forEach(fsSize, fs => {
+        forEach(fsSize, fs => {
             if (!['/dev/data', '/dev/system'].includes(fs.fs)) {
                 disk.count += 1;
                 disk.total += fs.size;

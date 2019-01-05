@@ -1,6 +1,6 @@
 import config from '../config';
-import find from 'find-process';
-import { last } from 'lodash';
+import findProcess from 'find-process';
+import last from 'lodash/last';
 
 class Module {
     constructor(data){
@@ -20,7 +20,7 @@ class Module {
     }
 
     async getBashProcess(){
-        var list = await find('name', this.path())
+        var list = await findProcess('name', this.path())
         const process = list.find(({name}) => name === "bash");
         if(process) 
             return {

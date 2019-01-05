@@ -1,5 +1,6 @@
 import fs from 'fs';
-import _ from 'lodash';
+import reduce from 'lodash/reduce';
+import trim from 'lodash/trim';
 import path from 'path';
 
 const argv = require('minimist')(process.argv.slice(2));
@@ -29,9 +30,9 @@ try {
     process.exit(1);
 }
 apiConf = apiConf.split('\n').filter(line => !!line && line.trim().charAt(0) !== "#");
-apiConf = _.reduce(apiConf, function(result, str){
+apiConf = reduce(apiConf, function(result, str){
     var [ key, value ] = str.split('=');
-    value = _.trim(value, '"\' ');
+    value = trim(value, '"\' ');
     result[key] = isFinite(value) ? Number(value) : value;
     return result;
 },{})

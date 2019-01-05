@@ -1,7 +1,7 @@
 import { rootPath } from '../config';
 import logger from '../utils/logger';
 import configApp from '../config';
-import { isArray } from 'lodash';
+import isArray from 'lodash/isArray';
 import { asyncForEach } from '../utils/method-helpers';
 
 const tls = require('tls')

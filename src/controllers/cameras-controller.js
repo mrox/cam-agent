@@ -3,6 +3,7 @@ import { parseCmdLocal, asyncForEach } from '../utils/method-helpers';
 import { getLiveStatCamera } from '../api/namcdn-api';
 import { config } from '../config';
 import { getIpsMac } from '../utils/shell-methods';
+import mapValues from 'lodash/mapValues'
 import logger from '../utils/logger';
 import os from 'os';
 
@@ -35,7 +36,7 @@ class CamerasController {
 
         var chanelsByIp, ipsMac,lives;
 
-        var ifaces = _.mapValues(os.networkInterfaces(),(value) => {
+        var ifaces = mapValues(os.networkInterfaces(),(value) => {
             return value.filter(({family, internal}) =>!internal && family === 'IPv4')
         })
         
