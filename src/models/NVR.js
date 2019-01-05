@@ -1,4 +1,6 @@
-import si from 'systeminformation';
+import siCpu from 'systeminformation/lib/cpu';
+import siFs from 'systeminformation/lib/filesystem'
+import siMem from 'systeminformation/lib/memory'
 import os from 'os';
 import Camera from './Camera';
 import { getModules, getTokenByNvrMac, getCamerasFromCMS } from '../api/cms-api';
@@ -58,11 +60,11 @@ class NVR {
     async getInfo() {
         var cpuTemperature, ffmpegCounter, currentLoad, mem, fsSize, cpu;
         try {
-            currentLoad = await si.currentLoad()
-            mem = await si.mem();
-            fsSize = await si.fsSize()
-            cpu = await si.cpu();
-            cpuTemperature = await si.cpuTemperature().then(rs => rs.main)
+            currentLoad = await siCpu.currentLoad()
+            mem = await siMem.mem();
+            fsSize = await siFs.fsSize()
+            cpu = await siCpu.cpu();
+            cpuTemperature = await siCpu.cpuTemperature().then(rs => rs.main)
             ffmpegCounter = getFfmpegCounter()
         } catch (error) {
             logger.error(error.message)
