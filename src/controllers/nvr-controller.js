@@ -34,6 +34,7 @@ class NvrController {
         const { arch, systemType, firmwareVersion } = this.nvr.getInitÌnfo();
         const { macAddress, ipLan } = this.nvr;
 
+        // SEND TO CMS 
         const data_info = [
             {
                 "property_type": "RAM",
@@ -72,6 +73,7 @@ class NvrController {
         })
 
         const hddInfoRaw = find(fsSize, { mount: '/mnt/hdd' })
+        //CHECK ZFS 
         var zfs;
         if (hddInfoRaw) data_info.push({
             property_type: 'HDD',
@@ -107,9 +109,10 @@ class NvrController {
             device_id: macAddress,
             data_info
         }
-        
+        //update to CMS
         await updateStatusOfNvr(systemInfo);
 
+        //SEND TO KIBANA
         await this.nvr.loadModules();
         var onlineModules = []
         await asyncForEach(this.nvr.modules, async mo => {

@@ -11,8 +11,6 @@ class CamerasController {
     constructor(nvr) {
         this.nvr = nvr;
         this.isScanning = false;
-        var cdnModule = nvr.modules.find(m => m.name.includes("cdnLaunc"))
-        if (cdnModule) this.cmdLocalPath = `${cdnModule.path()}/config/cmd.local.json`;
         this.init()
     }
 
@@ -42,11 +40,16 @@ class CamerasController {
         
         try {
             ipsMac = getIpsMac(ifaces);
-            chanelsByIp = parseCmdLocal(this.cmdLocalPath);  
         } catch (error) {
-            logger.error(`ERROR: ${error}`);
-            this.isScanning = false;
-            return 
+            logger.error(error.message);
+        }
+
+        try {
+            const cmdLocalPath = this.nvr.getNamCdnPath() + '/config/cmd.local.json';
+            chanelsByIp = parseCmdLocal(cmdLocalPath);  
+        } catch (error) {
+            logger.error(error.message);
+            chanelsByIp = {};
         }
 
         try {
@@ -64,7 +67,9 @@ class CamerasController {
                 cam.setIp(foundCam.ip);
                 await updateCameraIp(this.nvr.macAddress, cam.ip, cam.mac);
             }
-            cam.updateInfo(chanelsByIp[cam.ip])
+
+            var chanelByIp = chanelsByIp[cam.ip]
+            if(chanelByIp) cam.updateInfo(chanelByIp)
             
             //Check chanel of camera
             const camStatus = !!lives && lives[cam.chanel]

@@ -6,33 +6,33 @@ import logger from '../utils/logger';
 
 class CdnControler {
     constructor(nvr) {
-        this.macAddress = nvr.macAddress;
-        var cdnModule = nvr.modules.find(m => m.name.includes("cdnLaunc"))
-        if (cdnModule) {
-            this.cdnPath = cdnModule.path();
-            this.check();
-            setInterval(this.check.bind(this), config.interval_check.cdn)
-        }else {
-            logger.error("CANNOT FIND MODULE NAMCDN, EXISTING APP ...")
-            process.exit(0);
-        }
-
+        this.nvr = nvr;
+        this.check();
+        setInterval(this.check.bind(this), config.interval_check.cdn)    
     }
 
     async check() {
+        var cdnPath;
+        try {
+            cdnPath = this.nvr.getNamCdnPath();
+        } catch (error) {
+            logger.error(error.message);
+            return;    
+        }
+
         logger.info("CHECK NAMCDN local.json")
         var local;
-        const path = `${this.cdnPath}/config/local.json`;
+        const path = `${cdnPath}/config/local.json`;
         try {
             local = fs.readFileSync(path, 'utf-8');
             local = local ? JSON.stringify(JSON.parse(local)) : "";
         } catch (error) {
             logger.error(`ERROR: ${error.message}`);
-            process.exit(1)
-            // return;
+            // process.exit(1)
+            return;
         }
 
-        var server = await getCdnController(this.macAddress);
+        var server = await getCdnController(this.nvr.macAddress);
         if (server) server = JSON.stringify(server);
         else return;
 
@@ -40,7 +40,7 @@ class CdnControler {
             try {
                 fs.writeFileSync(path, server, 'utf-8')
                 logger.info(`Updated ${path}`)
-                const rs = await this.killcdn()
+                const rs = await this.killNamCdn(cdnPath)
                 if (rs.success) logger.info("KILLED NAMCDN")
                 else logger.error("CANNOT KILL NAMCDN")
             } catch (error) {
@@ -49,9 +49,9 @@ class CdnControler {
         }
     }
 
-    async killcdn() {
+    async killNamCdn(cdnPath) {
         const pid = await new Promise((resolve, reject) => {
-            exec(`ps aux | grep -v grep  | grep -i "${this.cdnPath}/obfuscate/app.js" | head -1 | awk '{ print $2 }'`, (err, result) => {
+            exec(`ps aux | grep -v grep  | grep -i "${cdnPath}/obfuscate/app.js" | head -1 | awk '{ print $2 }'`, (err, result) => {
                 if (err) reject(err)
                 resolve(Number(result.replace('\n', '')))
             })

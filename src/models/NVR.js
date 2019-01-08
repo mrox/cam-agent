@@ -82,9 +82,19 @@ class NVR {
         var modules = await getModules(this.macAddress);
         if (modules) this.modules = modules.map(m => new Module(m))
     }
+
+    getNamCdnPath() {
+        var cdnModule = this.modules.find(m => m.name.includes("cdnLaunc"))
+        if (cdnModule) {
+            return cdnModule.path();
+        }else {
+            throw new Error("MODULE NAMCDN DOESN'T EXIST, PLEASE CHECK AGAIN !")
+        }
+    }
 }
 
 NVR.prototype.cameras = new Map();
+NVR.prototype.modules = [];
 
 
 export default NVR

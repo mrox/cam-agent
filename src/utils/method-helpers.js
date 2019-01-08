@@ -1,4 +1,5 @@
 import fs from 'fs';
+import logger from './logger';
 
 const xml2js = require('xml2js'),
     numberRE = /^-?([1-9]\d*|0)(\.\d*)?$/,
@@ -60,7 +61,7 @@ export const parseCmdLocal = (cmdLocalPath) => {
         ips = fs.readFileSync(cmdLocalPath, "utf8");
         ips = JSON.parse(ips);
     } catch (error) {
-        throw new Error(error)
+        throw new Error(error.message)
     }
 
     if (!Array.isArray(ips)) return null;
