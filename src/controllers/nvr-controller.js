@@ -114,29 +114,29 @@ class NvrController {
 
         //SEND TO KIBANA
         await this.nvr.loadModules();
-        var onlineModules = []
+        var onlineModules = [] ,modulesVesion = {}, stats = {}
+        const disk = { total: 0, used: 0, count: 0 }
+        const { manufacturer, brand, speed } = cpu
+
         await asyncForEach(this.nvr.modules, async mo => {
             const bashProcess = await mo.getBashProcess()
             if(bashProcess) {
                 const { id, name, version} = mo
                 onlineModules.push({id, name, version, ...bashProcess})
+                modulesVesion[name] = version
             }
         })
-        var stats = {}
+        
         try {
             stats = await pidusage(onlineModules.map(m => m.pid))
         } catch (error) {
             logger.error(error.message)
         }
+
         onlineModules.forEach(mo => {
             if(stats[mo.pid]) mo.elapsed = stats[mo.pid].elapsed;
         })
-    
-        const disk = {
-            total: 0,
-            used: 0,
-            count: 0
-        }
+
         forEach(fsSize, fs => {
             if (!['/dev/data', '/dev/system'].includes(fs.fs)) {
                 disk.count += 1;
@@ -144,7 +144,6 @@ class NvrController {
                 disk.used += fs.used;
             }
         })
-        const { manufacturer, brand, speed } = cpu
     
         let logObject = {
             '@cpu': currentLoad.currentload,
@@ -158,9 +157,10 @@ class NvrController {
             '@arch': arch,
             '@system_type': systemType,
             '@firmware_version': firmwareVersion,
-            '@modules': onlineModules
+            '@modules': onlineModules,
+            ...modulesVesion
         }
-
+        
         if (nandInfoRaw) logObject['@nand'] = {
             size: nandInfoRaw.size,
             used: nandInfoRaw.used
