@@ -42,8 +42,8 @@ class NVR {
         return this.cameras.get(mac)
     }
 
-    getCamByIp(ip) {
-        return this.getCameras().find(c => c.ip === ip);
+    getCamByHostname(hostname) {
+        return this.getCameras().find(c => c.hostname === hostname);
     }
 
     getCameras() {

@@ -1,64 +1,54 @@
-
-import CamAgent from 'cam-agent';
 import logger from '../utils/logger';
 import { Cam } from 'onvif'
-class Camera extends CamAgent {
+
+class Camera extends Cam {
     constructor(data) {
-        super(data.ip);
+        super({ hostname: data.hostname, port: 2000 });
         Object.assign(this, data)
     }
 
     isOnline() {
-        return !!this.ip && !!this.chanel;
+        return !!this.hostname && !!this.chanel;
     }
 
     updateInfo(data) {
         Object.assign(this, data)
     }
 
-    setIp(ip) {
-        this.ip = ip;
-        this.apiUrl = `http://${ip}`;
+    setHostname(hostname) {
+        this.hostname = hostname;
     }
 
     async checkSyncTime() {
-        const nvrTime = new Date();
-        const isPtz = await this.isPtz();
-        if (isPtz) {
-            const cam = new Cam({
-                hostname: this.ip, 
-                username: this.username, 
-                password: this.password,
-                port: 2000
-            })
-            
-            cam.getSystemDateAndTime((err, dateTime) => {
-                if(err) logger.error(`CANNOT GET TIME CAMERA PTZ ${this.ip}, ${err}`)
-                else {
-                    var time = new Date(dateTime);
-                    if (Math.abs(nvrTime.getTime() - time.getTime()) > 15000) {
-                        cam.setSystemDateAndTime({
-                            dateTime: new Date(),
-                            dateTimeType: "Manual"
-                        }, (err, date) => {
-                            if(err)logger.error(`CANNOT SET TIME CAMERA PTZ ${this.ip}, ${err}`)
-                            else logger.info(`SET TIME CAMERA PTZ ${this.ip} : ${date} SUCCESS`)
-                        })
-                    }
-                }
-            })
-        } else {
-            try {
-                const { systemdate, systemtime } = await this.getSysTime();
-                const time = new Date(`${systemdate} ${systemtime}`);
-                if (Math.abs(nvrTime.getTime() - time.getTime()) > 15000) {
-                    const { systemdate, systemtime } = await this.setSysTime();
-                    logger.info(`Updated TIME in camera: ${this.ip} - New date time: ${systemdate} ${systemtime}`)
-                }
-            } catch (error) {
-                logger.error(`CHECK TIME CAMERA IP:${this.ip} MAC:${this.mac} - ${error}`)
-            }
+        var camTime;
+        try {
+            camTime = await new Promise((resolve, reject) => this.getSystemDateAndTime((err, dateTime) => {
+                if (err) reject(err)
+                resolve(dateTime)
+            }))
+        } catch (error) {
+            logger.error(`GET TIME OF CAMERA ${this.hostname} FAILED, ERROR: ${error}`)
+            return;
+        }
 
+        const nvrTime = new Date();
+        const localOffset = nvrTime.getTimezoneOffset() * 60000
+
+        if (Math.abs(camTime.getTime() - nvrTime.getTime() + localOffset) > 15000) {
+            try {
+                const dateTime = new Date(nvrTime.getTime() - localOffset)
+                await new Promise((resolve, reject) => this.setSystemDateAndTime({
+                    dateTime,
+                    timezone: `GMT+00:00`,
+                    dateTimeType: "Manual"
+                }, (err, dateTime) => {
+                    if (err) reject(err)
+                    resolve(dateTime)
+                }))
+                logger.info(`UPDATE TIME OF CAMERA ${this.hostname} SUCCESS, NEW TIME ${dateTime.toISOString()}`)
+            } catch (error) {
+                logger.error(`SET TIME OF CAMERA ${this.hostname} FAILED, ERROR: ${error.message}`)
+            }
         }
     }
 }

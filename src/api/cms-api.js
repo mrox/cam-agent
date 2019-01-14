@@ -84,8 +84,8 @@ export const getCamerasFromCMS = async (nvrMac) => {
     try {
         const rs = await get(`/camera?action=get_all_camera_from_server&device_id_server=${nvrMac}`);
         const cameras = rs.split('\n').map(cam => {
-            const [ mac, ip ] = cam.split(';');
-            return {mac, ip}
+            const [ mac, hostname ] = cam.split(';');
+            return {mac, hostname}
         }).filter(c => !!c.mac)
         
         return cameras;

@@ -56,7 +56,7 @@ class OnvifController {
     }
 
     async request(data, event) {
-        const cam = this.nvr.getCamByIp(data.hostname);
+        const cam = this.nvr.getCamByHostname(data.hostname);
         if (!cam) return;
         const { error, result, xml } = await new Promise((resolve, reject) => {
             requestOnvif(cam, data, (error, result, xml) => resolve({ error, result, xml }))

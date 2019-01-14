@@ -63,12 +63,12 @@ class CamerasController {
         await asyncForEach(this.nvr.getCameras(), async cam => {
             var foundCam = ipsMac.find(c => c.mac === cam.mac) || {};
             // IF found ip of the camera by mac AND new IP different from old IP THEN update new IP to CMS
-            if (!!foundCam.ip && cam.ip != foundCam.ip) {
-                cam.setIp(foundCam.ip);
-                await updateCameraIp(this.nvr.macAddress, cam.ip, cam.mac);
+            if (!!foundCam.ip && cam.hostname != foundCam.ip) {
+                cam.setHostname(foundCam.ip);
+                await updateCameraIp(this.nvr.macAddress, cam.hostname, cam.mac);
             }
 
-            var chanelByIp = chanelsByIp[cam.ip]
+            var chanelByIp = chanelsByIp[cam.hostname]
             if(chanelByIp) cam.updateInfo(chanelByIp)
             
             //Check chanel of camera
@@ -76,12 +76,12 @@ class CamerasController {
 
             if (cam.isOnline() && camStatus) {
                 //CHECK CAMERA ONLINE
-                logger.info(`CHECK CAMERA IP:${cam.ip} MAC: ${cam.mac} ONLINE`)
+                logger.info(`CHECK CAMERA IP:${cam.hostname} MAC: ${cam.mac} ONLINE`)
                 await updateOnlineStatusCamera(cam.mac);
                 //CHECK CAMERA TIME VS NVR TIME
                 cam.checkSyncTime();
             } else {
-                logger.warn(`CHECK CAMERA IP:${cam.ip} MAC: ${cam.mac}  OFFLINE`)
+                logger.warn(`CHECK CAMERA IP:${cam.hostname} MAC: ${cam.mac}  OFFLINE`)
             }
         })
         logger.info("SCAN CAMERAS DONE")
