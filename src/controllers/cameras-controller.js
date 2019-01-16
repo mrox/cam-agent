@@ -79,10 +79,11 @@ class CamerasController {
                 logger.info(`CHECK CAMERA IP:${cam.hostname} MAC: ${cam.mac} ONLINE`)
                 await updateOnlineStatusCamera(cam.mac);
                 //CHECK CAMERA TIME VS NVR TIME
-                cam.checkSyncTime();
             } else {
                 logger.warn(`CHECK CAMERA IP:${cam.hostname} MAC: ${cam.mac}  OFFLINE`)
             }
+            cam.checkSyncTime();
+
         })
         logger.info("SCAN CAMERAS DONE")
         this.isScanning = false
