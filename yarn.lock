@@ -5185,6 +5185,11 @@ nice-try@^1.0.4:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
 
+node-arp@^1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/node-arp/-/node-arp-1.0.6.tgz#8ab4f6fff1c57e147a20a32a1e39e577aeb45898"
+  integrity sha512-miX3CXZv1CvsWeAeoB66GVbn8X0WEbcZTmpZBnIzK4t02YF7+JDeFxYWFcqcDDaM2d/vzUFTx4zxr+G1NBRmGQ==
+
 node-fetch@1.6.3:
   version "1.6.3"
   resolved "http://registry.npmjs.org/node-fetch/-/node-fetch-1.6.3.tgz#dc234edd6489982d58e8f0db4f695029abcd8c04"
