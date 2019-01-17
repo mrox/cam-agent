@@ -19,14 +19,16 @@ export const getDefaultIface = () => exec('ip r | grep default | awk  \'{ print 
 
 export const getMac = (netInterface) => exec(`/bin/cat /sys/class/net/${netInterface}/address`)
 
-export const getIpsMac = (ifaces) => {
+export const getIpsMac = () => {
     var rows = []
     const isPC = ['x64', 'x86'].includes(os.arch())
-    forEach(ifaces, function (value, key) {
-        if(value.length > 0 ) {
+    const ifaces = os.networkInterfaces()
+    forEach(ifaces, function (addresses, key) {
+        const value = addresses.filter(({internal, family}) => !internal && family === 'IPv4')
+        if(value.length > 0) {
             try {
                 const subnets = value.map(({address, netmask}) => `${address}:${netmask}`)
-                const str = exec(`sudo ${rootPath}/lib/${isPC ? 'arp-scan-pc' : 'arp-scan-b6'} --interface="${key}" ${subnets.join(' ')} --retry=1 --timeout=200 --interval=200u | grep ":" | egrep -v "Interface" | grep -v "Starting" | grep -v "Ending"`)
+                const str = exec(`sudo ${rootPath}/lib/${isPC ? 'arp-scan-pc' : 'arp-scan-b6'} -I "${key}" ${subnets.join(' ')} --retry=1 --timeout=200 --interval=200u | grep ":" | egrep -v "Interface" | grep -v "Starting" | grep -v "Ending"`)
                 const row = str.split('\n').map((line) => {
                     const [ip, mac] = line.split(/\s/g)
                     return { ip, mac }
