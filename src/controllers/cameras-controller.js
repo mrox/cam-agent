@@ -2,9 +2,10 @@ import { updateCameraIp, updateOnlineStatusCamera } from '../api/cms-api';
 import { asyncForEach } from '../utils/method-helpers';
 import { config } from '../config';
 import logger from '../utils/logger';
+import flatten from 'lodash/flatten';
 import os from 'os';
 import Discovery from '../utils/onvif-discovery';
-import {getMAC} from 'node-arp';
+import { getMAC } from 'node-arp';
 
 class CamerasController {
     constructor(nvr) {
@@ -26,14 +27,13 @@ class CamerasController {
 
     async scanCameras() {
         logger.info("START SCAN CAMERAS")
-        if(this.isScanning) {
+        if (this.isScanning) {
             logger.warn("The previous task of scanning camera doesn't finished yet! Skip this scanning...")
-            return ;
+            return;
         }
         this.isScanning = true;
 
         const camsByMac = await this.discoveryCameras()
-        console.log(camsByMac)
         await asyncForEach(this.nvr.getCameras(), async cam => {
             var foundCam = camsByMac[cam.mac];
             // IF found ip of the camera by mac AND new IP different from old IP THEN update new IP to CMS
@@ -43,7 +43,6 @@ class CamerasController {
 
             if (foundCam) {
                 cam.updateInfo(foundCam)
-                console.log(cam.port)
                 //CHECK CAMERA ONLINE
                 logger.info(`CHECK CAMERA IP:${cam.hostname} MAC: ${cam.mac} ONLINE`)
                 await updateOnlineStatusCamera(cam.mac);
@@ -57,37 +56,33 @@ class CamerasController {
         this.isScanning = false
     }
 
-    async discoveryCameras(){
-        var cameras = [];
-        await asyncForEach(Object.values(os.networkInterfaces()), async (addresses) => {
-            await asyncForEach(addresses, async (adr) => {
-                if(!adr.internal && adr.family === 'IPv4'){
-                    try {
-                        const cams = await new Promise ((resolve, reject) => {
-                            Discovery.probe({ address: adr.address }, function (err, cams) {
-                                if (err) reject(err) 
-                                resolve(cams)
-                            });
-                        })
-                        console.log(cams)
-                        cameras = cameras.concat(cams)
-                    } catch (error) {
-                        logger.error(`CAN'T DISCOVERY BY ONVIF ON ${adr.address}, ERROR: ${error}`)
-                    }   
-                }
+    async discoveryCameras() {
+        const addresses = flatten(Object.values(os.networkInterfaces()))
+            .filter(adr => !adr.internal && adr.family === 'IPv4')
+
+        var cameras = await Promise.all(addresses.map((adr) => {
+            return new Promise((resolve, reject) => {
+                Discovery.probe({ address: adr.address }, (err, cams) => {
+                    if(err) reject(err)
+                    resolve(cams)
+                })
             })
+        })).catch(error => {
+            logger.error(error.message)
+            cameras = []
         })
-        console.log(cameras)
+
+        cameras = flatten(cameras)
+
         var camsByMac = {};
-        await asyncForEach(cameras, async (cam)=> {
+        await asyncForEach(cameras, async (cam) => {
             try {
                 const mac = await new Promise((resolve, reject) => {
                     getMAC(cam.hostname, (err, mac) => {
-                        if(err) reject(err)
+                        if (err) reject(err)
                         resolve(mac)
-                    }) 
+                    })
                 })
-                console.log(mac)
                 camsByMac[mac] = cam;
             } catch (error) {
                 logger.error(`CAN'T GET MAC OF IP ${cam.hostname}, ERROR: ${error.message}`)

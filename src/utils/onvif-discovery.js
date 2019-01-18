@@ -2,7 +2,6 @@ import events from 'events'
 import {guid , linerase,parseSOAPString } from './method-helpers'
 import url from 'url';
 
-
 /**
  * Discovery singleton
  * @type {Object}

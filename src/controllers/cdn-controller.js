@@ -8,7 +8,7 @@ class CdnControler {
     constructor(nvr) {
         this.nvr = nvr;
         this.check();
-        setInterval(this.check.bind(this), config.interval_check.cdn)    
+        setInterval(this.check.bind(this), config.interval_check.cdn) 
     }
 
     async check() {

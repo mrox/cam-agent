@@ -1,11 +1,10 @@
 {
   "logsfile": false,
-  "logs_screen": false,
-  "logs_kibana_dir": "/mnt/hdd/kibana",
+  "logs_screen": true,
   "interval_check": {
     "cameras": 60000,
     "cdn": 60000,
     "nvr": 300000
   },
-  "base_dir": "/home/phucdo/Documents/cam9"
+  "base_dir": "/home/phuc/Documents/cam9"
 }
