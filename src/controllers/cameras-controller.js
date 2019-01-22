@@ -1,5 +1,5 @@
 import { updateCameraIp, updateOnlineStatusCamera } from '../api/cms-api';
-import { asyncForEach } from '../utils/method-helpers';
+import { asyncForEach, callbackToPromise } from '../utils/method-helpers';
 import { config } from '../config';
 import logger from '../utils/logger';
 import flatten from 'lodash/flatten';
@@ -8,14 +8,17 @@ import Discovery from '../utils/onvif-discovery';
 import { getMAC } from 'node-arp';
 
 class CamerasController {
-    constructor(nvr) {
+    constructor(nvr, logTcp) {
         this.nvr = nvr;
         this.isScanning = false;
+        this.logTcp = logTcp;
         this.init()
     }
 
     async init() {
         await this.scanCameras();
+        this.sendCamerasInfoLog();
+        setInterval(this.sendCamerasInfoLog.bind(this), config.interval_check.sendlog_cameras)
         setInterval(this.checkCameras.bind(this), config.interval_check.cameras);
     }
 
@@ -24,6 +27,20 @@ class CamerasController {
         await this.scanCameras();
     }
 
+    sendCamerasInfoLog() {
+        this.nvr.getCameras().forEach(async cam => {
+            try {
+                var info = await cam.getInfo()
+                info.type = 'vp9camera'
+                info.nvrMac = this.nvr.macAddress
+                var sendDone = await this.logTcp.sendlog(info)
+                if(sendDone) logger.info(`SENT LOG OF CAMERA ${cam.mac}`)
+            
+            } catch (error) {
+                logger.warn(`CAMERA ${cam.mac} IS OFFLINE, CANNOT SEND LOG TO SERVER`)
+            }
+        })
+    }
 
     async scanCameras() {
         logger.info("START SCAN CAMERAS")
@@ -37,8 +54,8 @@ class CamerasController {
         await asyncForEach(this.nvr.getCameras(), async cam => {
             var foundCam = camsByMac[cam.mac];
             // IF found ip of the camera by mac AND new IP different from old IP THEN update new IP to CMS
-            if (!!foundCam && cam.hostname != foundCam.hostname) {
-                await updateCameraIp(this.nvr.macAddress, cam.hostname, cam.mac);
+            if (!!foundCam && cam.hostname !== foundCam.hostname) {
+                await updateCameraIp(this.nvr.macAddress, foundCam.hostname, cam.mac);
             }
 
             if (foundCam) {
@@ -60,13 +77,9 @@ class CamerasController {
         const addresses = flatten(Object.values(os.networkInterfaces()))
             .filter(adr => !adr.internal && adr.family === 'IPv4')
 
+
         var cameras = await Promise.all(addresses.map((adr) => {
-            return new Promise((resolve, reject) => {
-                Discovery.probe({ address: adr.address }, (err, cams) => {
-                    if(err) reject(err)
-                    resolve(cams)
-                })
-            })
+            return callbackToPromise(Discovery.probe, { address: adr.address })
         })).catch(error => {
             logger.error(error.message)
             cameras = []
@@ -77,12 +90,7 @@ class CamerasController {
         var camsByMac = {};
         await asyncForEach(cameras, async (cam) => {
             try {
-                const mac = await new Promise((resolve, reject) => {
-                    getMAC(cam.hostname, (err, mac) => {
-                        if (err) reject(err)
-                        resolve(mac)
-                    })
-                })
+                const mac = await callbackToPromise(getMAC, cam.hostname)
                 camsByMac[mac] = cam;
             } catch (error) {
                 logger.error(`CAN'T GET MAC OF IP ${cam.hostname}, ERROR: ${error.message}`)

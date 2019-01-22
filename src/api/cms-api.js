@@ -71,7 +71,6 @@ export const getModules = async (nvrMac) => {
                 return{
                 id, command, name, version, date, link, os, cpu
             }})
-            console.log(modules)
             return modules;
         }else if(typeof rs === 'object' && !!rs.error) 
             throw new Error(rs.message)

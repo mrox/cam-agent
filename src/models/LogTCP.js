@@ -12,7 +12,7 @@ const sslOption = {
 }
 
 class LogTCP {
-    constructor(mac, config) {
+    constructor(config) {
         this.isConnected = false;
         this.config = config;
         this.connect();
@@ -20,7 +20,6 @@ class LogTCP {
         this.logObject = {
             '@version': `${pkg.name}@^${pkg.version}`,
             '@appId': `${pkg.name}@^${pkg.version}`,
-            '@node': mac,
             '@engine': 'Nodejs'
         }
     }
@@ -37,24 +36,23 @@ class LogTCP {
         })
     }
 
-    async log(obj, level) {
+    async sendlog(obj) {
         if (!this.isConnected) this.connect();
 
-        obj.level = level
         obj['@timestamp'] = (new Date()).toISOString();
         obj = JSON.stringify(Object.assign(obj, this.logObject));
 
         try {
-            const mess = await new Promise((resolve, reject) => {
-                this.tcp.write(obj + '\n', (err) => {
-                    if (err) reject(`CANNOT SEND LOG TCP: ${err}`)
-                    else resolve('SEND TO LOGS SERVER DONE')
+            const isDone = await new Promise((resolve) => {
+                this.tcp.write(obj + '\n', () => {
+                    resolve(true)
                 })
             })
-            if (mess) logger.info(mess)
+            return isDone
             
         } catch (error) {
             logger.error(error)
+            return false
         }
     }
 }

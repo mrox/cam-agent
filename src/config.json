@@ -4,7 +4,8 @@
   "interval_check": {
     "cameras": 60000,
     "cdn": 60000,
-    "nvr": 300000
+    "nvr": 300000,
+    "sendlog_cameras": 3600000
   },
   "base_dir": "/home/phuc/Documents/cam9"
 }

@@ -48,7 +48,8 @@ const config = {
     type: url.includes('cam9') ? 'cam9' : 'vcam',
     log_server: {
         port: 443,
-        host: api.replace(/^http(s?):\/\/core/i, 'logs').replace('/api', '')
+        host: api.replace(/^http(s?):\/\/core/i, 'logs').replace('/api', ''),
+        // host: 'logs.cam9.tv'
     }
 }
 
