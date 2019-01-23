@@ -29,16 +29,17 @@ class CamerasController {
 
     sendCamerasInfoLog() {
         this.nvr.getCameras().forEach(async cam => {
-            try {
-                var info = await cam.getInfo()
-                info.type = 'vp9camera'
-                info.nvrMac = this.nvr.macAddress
-                var sendDone = await this.logTcp.sendlog(info)
-                if(sendDone) logger.info(`SENT LOG OF CAMERA ${cam.mac}`)
-            
-            } catch (error) {
-                logger.warn(`CAMERA ${cam.mac} IS OFFLINE, CANNOT SEND LOG TO SERVER`)
-            }
+            if (cam.isOnline)
+                try {
+                    var info = await cam.getInfo()
+                    info.type = 'vp9camera'
+                    info.nvrMac = this.nvr.macAddress
+                    var sendDone = await this.logTcp.sendlog(info)
+                    if (sendDone) logger.info(`SENT LOG OF CAMERA ${cam.mac}`)
+
+                } catch (error) {
+                    logger.warn(`CANNOT CONNECT TO CAMERA ${cam.mac}`)
+                }
         })
     }
 
@@ -63,10 +64,12 @@ class CamerasController {
                 //CHECK CAMERA ONLINE
                 logger.info(`CHECK CAMERA IP:${cam.hostname} MAC: ${cam.mac} ONLINE`)
                 await updateOnlineStatusCamera(cam.mac);
+                cam.setOnline(true)
                 //CHECK CAMERA TIME VS NVR TIME
                 cam.checkSyncTime();
             } else {
                 logger.warn(`CHECK CAMERA IP:${cam.hostname} MAC: ${cam.mac}  OFFLINE`)
+                cam.setOnline(false)
             }
         })
         logger.info("SCAN CAMERAS DONE")

@@ -13,6 +13,10 @@ class Camera extends Cam {
         Object.assign(this, data)
     }
 
+    setOnline(isOnline) {
+        this.isOnline = isOnline
+    }
+
     getInfo() {
         return new Promise((resolve, reject) =>
             this.connect(async err => {
