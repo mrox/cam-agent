@@ -1,12 +1,11 @@
 import { updateStatusOfNvr } from '../api/cms-api';
 import find from 'lodash/find';
 import forEach from 'lodash/forEach'
-import LogTCP from '../models/LogTCP';
 import config from '../config';
 import pidusage from 'pidusage';
 var diskspace = require('diskspace');
 
-import { asyncForEach } from '../utils/method-helpers';
+import { asyncForEach, callbackToPromise} from '../utils/method-helpers';
 import logger from '../utils/logger';
 
 class NvrController {
@@ -24,7 +23,7 @@ class NvrController {
 
 
     async checkNVR() {
-        const { mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, cpu } = await this.nvr.getInfo();
+        const { mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, cpu, uptime } = await this.nvr.getInfo();
         const hddInfoRaw = find(fsSize, { mount: '/mnt/hdd' })
         const nandInfoRaw = find(fsSize, { fs: '/dev/data' });
 
@@ -33,23 +32,16 @@ class NvrController {
         // SEND TO CMS 
         this.sendToCms(mem, cpuTemperature, currentLoad, hddInfoRaw, zfs, nandInfoRaw)
         //SEND TO KIBANA
-        this.sendLogInfo(mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, cpu, zfs, nandInfoRaw)
+        this.sendLogInfo(mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, cpu, zfs, nandInfoRaw, uptime)
     }
 
     async getZfs() {
         var zfs;
         try {
-            const { used, total } = await new Promise((resolve, reject) => {
-                diskspace.check('/mnt/hdd', (err, rs) => {
-                    if (err) reject(err)
-                    else resolve(rs)
-                });
-            })
+            const { used, total } = await callbackToPromise(diskspace.check, '/mnt/hdd')
             zfs = { used, total }
-
         } catch (error) {
             logger.error(error.message)
-
         }
         return zfs
     }
@@ -121,7 +113,7 @@ class NvrController {
         updateStatusOfNvr(systemInfo);
     }
 
-    async sendLogInfo(mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, cpu, zfs, nandInfoRaw) {
+    async sendLogInfo(mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, cpu, zfs, nandInfoRaw, uptime) {
         await this.nvr.loadModules();
         const { arch, systemType, firmwareVersion } = this.nvr.getInitÌnfo();
         const { ipLan, modules } = this.nvr;
@@ -140,7 +132,8 @@ class NvrController {
         })
 
         try {
-            stats = await pidusage(onlineModules.map(m => m.pid))
+            const pids = onlineModules.map(m => m.pid) 
+            if(pids.length > 0) stats = await pidusage(pids)
         } catch (error) {
             logger.error(error.message)
         }
@@ -171,6 +164,7 @@ class NvrController {
             '@firmware_version': firmwareVersion,
             '@modules': onlineModules,
             '@node': this.nvr.macAddress,
+            '@uptime' : uptime,
             type: 'vp9tcp',
             ...modulesVesion
         }

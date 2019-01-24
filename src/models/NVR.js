@@ -70,7 +70,7 @@ class NVR {
             logger.error(error.message)
         }
 
-        return { currentLoad, mem, cpuTemperature, fsSize, ffmpegCounter, cpu }
+        return { currentLoad, mem, cpuTemperature, fsSize, ffmpegCounter, cpu, uptime: os.uptime() }
     }
 
     async loadCameras() {
