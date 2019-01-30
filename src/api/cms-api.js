@@ -64,7 +64,7 @@ export const getCdnController = async (nvrMac) => {
 export const getModules = async (nvrMac) => {
     try {
         const rs = await get(`/module?action=get_latest_version&device_id_server=${nvrMac}`);
-        if(typeof rs === 'string'){
+        if(!!rs && typeof rs === 'string'){
             const modules = rs.replace('EOF\n', '').split('EOL\n')
             .map(line => {
                 const [id, command, name, version, date, link, os, cpu] = line.split(";")
@@ -82,12 +82,13 @@ export const getModules = async (nvrMac) => {
 
 export const getCamerasFromCMS = async (nvrMac) => {
     try {
-        const rs = await get(`/camera?action=get_all_camera_from_server&device_id_server=${nvrMac}`);
-        const cameras = rs.split('\n').map(cam => {
-            const [ mac, hostname ] = cam.split(';');
-            return {mac, hostname}
-        }).filter(c => !!c.mac)
-        
+        const rs = await get(`/server/getDetail?version=v2&device_id=${nvrMac}`);
+
+        const cameras = rs.cameras.map(cam => {
+            const { ip, username, password, device_id, ptz_type } = cam
+            return {mac: device_id, hostname: ip, username, password, isPtz: !!ptz_type}
+        })
+
         return cameras;
     } catch (error) {
         logger.error(`GET CAMERAS FROM CMS FAILED - ${error.message}`)     

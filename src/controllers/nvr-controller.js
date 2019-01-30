@@ -1,18 +1,17 @@
 import { updateStatusOfNvr } from '../api/cms-api';
 import find from 'lodash/find';
 import forEach from 'lodash/forEach'
-import LogTCP from '../models/LogTCP';
 import config from '../config';
 import pidusage from 'pidusage';
 var diskspace = require('diskspace');
 
-import { asyncForEach } from '../utils/method-helpers';
+import { asyncForEach, callbackToPromise} from '../utils/method-helpers';
 import logger from '../utils/logger';
 
 class NvrController {
-    constructor(nvr) {
+    constructor(nvr, logTcp) {
         this.nvr = nvr;
-        this.logTCP = new LogTCP(nvr.macAddress, config.log_server);
+        this.logTCP = logTcp;
         this.init();
     }
 
@@ -20,21 +19,36 @@ class NvrController {
         //CHECK CHANGED INFO 
         await this.checkNVR();
         setInterval(this.checkNVR.bind(this), config.interval_check.nvr);
-        //INIT LOG      
-        // const { arch, systemType, firmwareVersion } = this.nvr.getInitÌnfo();
-        // this.logTCP.log({
-        //     '@arch': arch,
-        //     '@system_type': systemType,
-        //     '@firmware_version': firmwareVersion,
-        // }, 'info')
     }
 
-    async checkNVR() {
-        const { mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter , cpu} = await this.nvr.getInfo();
-        const { arch, systemType, firmwareVersion } = this.nvr.getInitÌnfo();
-        const { macAddress, ipLan } = this.nvr;
 
+    async checkNVR() {
+        const { mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, cpu, uptime } = await this.nvr.getInfo();
+        const hddInfoRaw = find(fsSize, { mount: '/mnt/hdd' })
+        const nandInfoRaw = find(fsSize, { fs: '/dev/data' });
+
+        var zfs;
+        if (!hddInfoRaw) zfs = await this.getZfs()
         // SEND TO CMS 
+        this.sendToCms(mem, cpuTemperature, currentLoad, hddInfoRaw, zfs, nandInfoRaw)
+        //SEND TO KIBANA
+        this.sendLogInfo(mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, cpu, zfs, nandInfoRaw, uptime)
+    }
+
+    async getZfs() {
+        var zfs;
+        try {
+            const { used, total } = await callbackToPromise(diskspace.check, '/mnt/hdd')
+            zfs = { used, total }
+        } catch (error) {
+            logger.error(error.message)
+        }
+        return zfs
+    }
+
+    sendToCms(mem, cpuTemperature, currentLoad, hddInfoRaw, zfs, nandInfoRaw) {
+        const { macAddress } = this.nvr;
+
         const data_info = [
             {
                 "property_type": "RAM",
@@ -62,7 +76,6 @@ class NvrController {
             }))
         ]
 
-        const nandInfoRaw = find(fsSize, { fs: '/dev/data' });
         if (nandInfoRaw) data_info.push({
             property_type: "NAND",
             module_id: '1',
@@ -72,10 +85,7 @@ class NvrController {
             volume_used: nandInfoRaw.used / Math.pow(1024, 3)
         })
 
-        const hddInfoRaw = find(fsSize, { mount: '/mnt/hdd' })
-        //CHECK ZFS 
-        var zfs;
-        if (hddInfoRaw) data_info.push({
+        if (!!hddInfoRaw) data_info.push({
             property_type: 'HDD',
             module_id: '1',
             property_group: 'STORAGE',
@@ -83,58 +93,53 @@ class NvrController {
             volume_total: hddInfoRaw.size / Math.pow(1024, 3),
             volume_used: hddInfoRaw.used / Math.pow(1024, 3)
         })
-        else {
-            try {
-                const { used, total } = await new Promise((resolve, reject) => {
-                    diskspace.check('/mnt/hdd', (err, rs) => {
-                        if(err) reject(err)
-                        else resolve(rs)
-                    });
-                }) 
-                zfs = {used, total}
-                data_info.push({
-                    property_type: 'HDD',
-                    module_id: '1',
-                    property_group: 'STORAGE',
-                    unit_type: 'GB',
-                    volume_total: total / Math.pow(1024, 3),
-                    volume_used: used / Math.pow(1024, 3)
-                })
-            } catch (error) {
-                logger.error(error.message)
-            }
+        else if (!!zfs) {
+            const { used, total } = zfs
+            data_info.push({
+                property_type: 'HDD',
+                module_id: '1',
+                property_group: 'STORAGE',
+                unit_type: 'GB',
+                volume_total: total / Math.pow(1024, 3),
+                volume_used: used / Math.pow(1024, 3)
+            })
         }
 
-        var systemInfo = {
+        const systemInfo = {
             device_id: macAddress,
             data_info
         }
-        //update to CMS
-        await updateStatusOfNvr(systemInfo);
 
-        //SEND TO KIBANA
+        updateStatusOfNvr(systemInfo);
+    }
+
+    async sendLogInfo(mem, cpuTemperature, fsSize, currentLoad, ffmpegCounter, cpu, zfs, nandInfoRaw, uptime) {
         await this.nvr.loadModules();
-        var onlineModules = [] ,modulesVesion = {}, stats = {}
+        const { arch, systemType, firmwareVersion } = this.nvr.getInitÌnfo();
+        const { ipLan, modules } = this.nvr;
+
+        var onlineModules = [], modulesVesion = {}, stats = {}
         const disk = { total: 0, used: 0, count: 0 }
         const { manufacturer, brand, speed } = cpu
 
-        await asyncForEach(this.nvr.modules, async mo => {
+        await asyncForEach(modules, async mo => {
             const bashProcess = await mo.getBashProcess()
-            if(bashProcess) {
-                const { id, name, version} = mo
-                onlineModules.push({id, name, version, ...bashProcess})
+            if (bashProcess) {
+                const { id, name, version } = mo
+                onlineModules.push({ id, name, version, ...bashProcess })
                 modulesVesion[name] = version
             }
         })
-        
+
         try {
-            stats = await pidusage(onlineModules.map(m => m.pid))
+            const pids = onlineModules.map(m => m.pid) 
+            if(pids.length > 0) stats = await pidusage(pids)
         } catch (error) {
             logger.error(error.message)
         }
 
         onlineModules.forEach(mo => {
-            if(stats[mo.pid]) mo.elapsed = stats[mo.pid].elapsed;
+            if (stats[mo.pid]) mo.elapsed = stats[mo.pid].elapsed;
         })
 
         forEach(fsSize, fs => {
@@ -144,7 +149,7 @@ class NvrController {
                 disk.used += fs.used;
             }
         })
-    
+
         let logObject = {
             '@cpu': currentLoad.currentload,
             '@cpu_name': `${manufacturer || ''} ${brand || ''} @ ${speed}GHz`.trim(),
@@ -158,15 +163,20 @@ class NvrController {
             '@system_type': systemType,
             '@firmware_version': firmwareVersion,
             '@modules': onlineModules,
+            '@node': this.nvr.macAddress,
+            '@uptime' : uptime,
+            type: 'vp9tcp',
             ...modulesVesion
         }
-        
+
         if (nandInfoRaw) logObject['@nand'] = {
             size: nandInfoRaw.size,
             used: nandInfoRaw.used
         }
-        if(zfs) logObject['@zfs'] = zfs
-        this.logTCP.log(logObject, 'info')
+        if (zfs) logObject['@zfs'] = zfs
+        // console.log(logObject)
+        const sent = this.logTCP.sendlog(logObject)
+        if(sent) logger.info('SENT LOG OF NVR DONE')
     }
 }
 

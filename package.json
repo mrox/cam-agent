@@ -11,7 +11,7 @@
     "build": "webpack --mode production --module-bind 'js=babel-loader'",
     "docs": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose",
     "start": "nodemon --exec babel-node src/index.js",
-    "dev": "nodemon --exec babel-node src/index.js"
+    "dev": "nodemon --exec babel-node src/test.js"
   },
   "dependencies": {
     "axios": "^0.18.0",
@@ -21,6 +21,7 @@
     "find-process": "^1.2.1",
     "lodash": "^4.17.11",
     "minimist": "^1.2.0",
+    "node-arp": "^1.0.6",
     "onvif": "^0.6.0",
     "pidusage": "^2.0.17",
     "socket.io-client": "^2.2.0",

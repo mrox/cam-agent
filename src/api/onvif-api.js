@@ -4,14 +4,14 @@ import { parseSOAPString } from '../utils/method-helpers';
 export const requestOnvif = async (cam, options, callback) => {
     var callbackExecuted = false;
 
-    const path = options.service ? `/onvif/${options.service}` : cam.path;
+    const path = options.service ?`/onvif/${options.service}`  : cam.path 
     const reqOptions = {
-        hostname: options.hostname,
+        hostname: cam.hostname,
         //port: options.port || 2000,
         port: cam.port || 2000,
         path,
-        username: options.username,
-        password: options.password,
+        username: cam.username,
+        password: cam.password,
         headers: {
             'Content-Type': 'application/soap+xml',
             'Content-Length': Buffer.byteLength(options.body, 'utf8'),

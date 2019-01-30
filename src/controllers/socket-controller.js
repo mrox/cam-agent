@@ -2,8 +2,16 @@ import io from 'socket.io-client';
 import { requestOnvif } from '../api/onvif-api';
 import config from '../config';
 import logger from '../utils/logger';
+import os from 'os';
 
-class OnvifController {
+const onvifEvents = [
+    ['message_cam', 'OnvifResult'],
+    ['getCapabilities', 'getCapabilities'],
+    ['getProfiles', 'getProfiles'],
+    ['getVideoSources', 'getVideoSources']
+]
+
+class SocketController {
     constructor(nvr) {
         this.nvr = nvr;
         if (!!config.onvifSocket) {
@@ -24,7 +32,6 @@ class OnvifController {
             });
             socket.emit('CamOderUbuntu', { device_id: this.nvr.macAddress });
         });
-        socket.emit('my other event', { my: 'data' });
 
         socket.on('error', function (data) {
             logger.error('SOCKET -' + data);
@@ -36,26 +43,34 @@ class OnvifController {
             logger.error("SOCKET - disconnect socket");
         });
 
-        socket.on('message_cam', data => this.request(data, 'OnvifResult'))
+        socket.on('query', this.handleQuery.bind(this))
 
-        // socket.on('getCapabilities', data => {
-        //     console.log("getCapabilities")
-        //     const cam = this.nvr.getCamByHostname(data.hostname);
-        //     if (!cam) return;
-        //     var { capabilities } = cam;
-        //     console.log(JSON.stringify(capabilities));
-        //     socket.emit('getCapabilities', [{"getCapabilitiesResponse": [{"capabilities": [capabilities]}]}])
-        // })
-        // socket.on('getCapabilities', data => console.log(data))
-
-        socket.on('getCapabilities', data => this.request(data, 'getCapabilities'))
-
-        socket.on('getProfiles', data => this.request(data, 'getProfiles'))
-
-        socket.on('getVideoSources', data => this.request(data, 'getVideoSources'))
+        onvifEvents.forEach(([eventOn, eventEmit]) => {
+            socket.on(eventOn, data => this.handleOnvifEvent(data, eventEmit))
+        })
     }
 
-    async request(data, event) {
+    handleQuery(query){
+        var result 
+        switch (query.cmd) {
+            case 'interfaces':
+                result = {
+                    type: query.cmd,
+                    data:os.networkInterfaces()
+                };
+                delete result.data.lo;
+                break;
+        
+            default:
+                break;
+        }
+        this.socket.emit('result', {
+            room: this.nvr.macAddress,
+            result
+        })
+    }
+
+    async handleOnvifEvent(data, event) {
         const cam = this.nvr.getCamByHostname(data.hostname);
         if (!cam) return;
         const { error, result, xml } = await new Promise((resolve, reject) => {
@@ -75,4 +90,4 @@ class OnvifController {
     }
 }
 
-export default OnvifController;
+export default SocketController;
