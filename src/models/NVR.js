@@ -29,7 +29,9 @@ class NVR {
             // await this.loadInfo();
             await this.loadCameras();
             await this.loadModules();
-            this.token = await getTokenByNvrMac(this.macAddress)
+            const { token, siteName} = await getTokenByNvrMac(this.macAddress)
+            this.token = token;
+            this.siteName = siteName
             return this;
         })();
     }
@@ -75,7 +77,20 @@ class NVR {
 
     async loadCameras() {
         const cameras = await getCamerasFromCMS(this.macAddress)
-        if (cameras) this.cameras = new Map(cameras.map(c => [c.mac, new Camera(c)]));
+        if (cameras) {
+            this.cameras.forEach((cam, key) => {
+                const foundIndex = cameras.findIndex(({mac}) => key === mac)
+                if(foundIndex > -1) {
+                    cam.updateInfo(cameras[foundIndex])
+                    cameras.splice(foundIndex, 1)
+                }
+                else this.cameras.delete(key)
+            })
+
+            cameras.forEach(cam => {
+                this.cameras.set(cam.mac, new Camera(cam))
+            });
+        }
     }
 
     async loadModules() {

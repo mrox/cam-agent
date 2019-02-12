@@ -142,14 +142,17 @@ export const parseCmdLocal = (cmdLocalPath) => {
 	return rt
 }
 
-export function callbackToPromise(func) {
-	delete arguments[0]
+export function callbackToPromise(...args) {
+	const func = args[0];
+	if (typeof func !== 'function')
+		throw new Error("The first argument must be function!")
+
 	return new Promise((resolve, reject) => {
 		var callback = (err, value) => {
 
 			if (err) reject(err)
 			else resolve(value)
 		}
-		func.apply(null, [...Object.values(arguments), callback])
+		func.apply(null, [...args.slice(1), callback])
 	})
 }

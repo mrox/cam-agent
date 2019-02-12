@@ -14,7 +14,7 @@ export const getNvrInfo = async (mac) => {
 
 export const updateStatusOfNvr = async  (data) => {
     try {
-        const rs = await post('/healthchecker/update', data)
+        await post('/healthchecker/update', data)
         logger.info("UPDATED NVR INFO")
     } catch (error) {
         logger.error(`UPDATE NVR INFO TO CMS FAILED - ${error.message}`)
@@ -45,7 +45,7 @@ export const updateCameraIp = async (nvrMac, newIp, camMac) => {
 export const getTokenByNvrMac = async (mac) => {
     try {
         const rs = await get(`/getToken?device_id=${mac}`);
-        if(rs.token) return rs.token;
+        return {token: rs.token || '', siteName: rs.site_name|| ''};
     } catch (error) {
         logger.error(`GET TOKEN OF NVR MAC FROM CMS FAILED - ${error.message}`)
     }

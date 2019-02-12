@@ -2,6 +2,7 @@ import logger from '../utils/logger';
 import { Cam } from 'onvif'
 import pick from 'lodash/pick'
 import { callbackToPromise } from '../utils/method-helpers';
+import ping from 'ping'
 
 class Camera extends Cam {
     constructor(data) {
@@ -13,39 +14,42 @@ class Camera extends Cam {
         Object.assign(this, data)
     }
 
-    setOnline(isOnline) {
-        this.isOnline = isOnline
+    async isOnline() {
+        const isAlive = await ping.promise.probe(this.hostname).then(rs => rs.alive)
+        if(!isAlive) return false
+        return await new Promise((resolve) => this.connect((err) => {
+            if(err) {
+                resolve(false)
+            }
+            else resolve(true)
+        })) 
     }
 
-    getInfo() {
-        return new Promise((resolve, reject) =>
-            this.connect(async err => {
-                if (err) reject(err)
-                else {
-                    const info = {
-                        hostname: this.hostname,
-                        port: this.port,
-                        path: this.path,
-                        mac: this.mac
-                    }
-                    try {
-                        const videoEncoderConfigurations = await callbackToPromise(this.getVideoEncoderConfigurations.bind(this))
-                        info.videoEncoderConfigurations = videoEncoderConfigurations.map(config => pick(config,['encoding', 'resolution', 'quality', 'rateControl','H264']))
-                    } catch (error) {
-                        logger.error(error.message)
-                    }
-    
-                    try {
-                        var deviceInformation = await callbackToPromise(this.getDeviceInformation.bind(this))
-                        info.deviceInformation = deviceInformation
-                    } catch (error) {
-                        logger.error('getDeviceInformation: ' + error.message)
-                    }
-    
-                    resolve(info)
-                }
-            })
-        )
+    async getInfo() {
+        const isOnline = await this.isOnline();
+        if(!isOnline) return null
+
+        const info = {
+            hostname: this.hostname,
+            port: this.port,
+            path: this.path,
+            mac: this.mac
+        }
+        try {
+            const videoEncoderConfigurations = await callbackToPromise(this.getVideoEncoderConfigurations.bind(this))
+            info.videoEncoderConfigurations = videoEncoderConfigurations.map(config => pick(config,['encoding', 'resolution', 'quality', 'rateControl','H264']))
+        } catch (error) {
+            logger.error(error.message)
+        }
+
+        try {
+            var deviceInformation = await callbackToPromise(this.getDeviceInformation.bind(this))
+            info.deviceInformation = deviceInformation
+        } catch (error) {
+            logger.error('getDeviceInformation: ' + error.message)
+        }
+
+        return info
     }
 
     async checkSyncTime() {

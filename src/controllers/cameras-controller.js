@@ -29,17 +29,13 @@ class CamerasController {
 
     sendCamerasInfoLog() {
         this.nvr.getCameras().forEach(async cam => {
-            if (cam.isOnline)
-                try {
-                    var info = await cam.getInfo()
-                    info.type = 'vp9camera'
-                    info.nvrMac = this.nvr.macAddress
-                    var sendDone = await this.logTcp.sendlog(info)
-                    if (sendDone) logger.info(`SENT LOG OF CAMERA ${cam.mac}`)
-
-                } catch (error) {
-                    logger.warn(`CANNOT CONNECT TO CAMERA ${cam.mac}`)
-                }
+            var info = await cam.getInfo()
+            if (info) {
+                info.type = 'vp9camera'
+                info.nvrMac = this.nvr.macAddress
+                var sendDone = await this.logTcp.sendlog(info)
+                if (sendDone) logger.info(`SENT LOG OF CAMERA ${cam.mac}`)
+            }
         })
     }
 
@@ -53,24 +49,23 @@ class CamerasController {
 
         const camsByMac = await this.discoveryCameras()
         await asyncForEach(this.nvr.getCameras(), async cam => {
-            var foundCam = camsByMac[cam.mac];
+            const foundCam = camsByMac[cam.mac];
             // IF found ip of the camera by mac AND new IP different from old IP THEN update new IP to CMS
-            if (!!foundCam && cam.hostname !== foundCam.hostname) {
-                await updateCameraIp(this.nvr.macAddress, foundCam.hostname, cam.mac);
+            if (!!foundCam) {
+                if (cam.hostname !== foundCam.hostname) await updateCameraIp(this.nvr.macAddress, foundCam.hostname, cam.mac);
+                cam.updateInfo(foundCam)          
             }
 
-            if (foundCam) {
-                cam.updateInfo(foundCam)
+            const isOnline = !!foundCam || await cam.isOnline()
+            if (isOnline) {
                 //CHECK CAMERA ONLINE
                 logger.info(`CHECK CAMERA IP:${cam.hostname} MAC: ${cam.mac} ONLINE`)
                 await updateOnlineStatusCamera(cam.mac);
-                cam.setOnline(true)
                 //CHECK CAMERA TIME VS NVR TIME
                 cam.checkSyncTime();
-            } else {
+            } else
                 logger.warn(`CHECK CAMERA IP:${cam.hostname} MAC: ${cam.mac}  OFFLINE`)
-                cam.setOnline(false)
-            }
+
         })
 
         logger.info("SCAN CAMERAS DONE")

@@ -164,6 +164,7 @@ class NvrController {
             '@firmware_version': firmwareVersion,
             '@modules': onlineModules,
             '@node': this.nvr.macAddress,
+            '@site_name': this.nvr.siteName, 
             '@uptime' : uptime,
             type: 'vp9tcp',
             ...modulesVesion
