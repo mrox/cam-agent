@@ -88,6 +88,7 @@ class NVR {
             })
 
             cameras.forEach(cam => {
+                cam.port = 2000;
                 this.cameras.set(cam.mac, new Camera(cam))
             });
         }

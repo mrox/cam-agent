@@ -6,6 +6,7 @@ import flatten from 'lodash/flatten';
 import os from 'os';
 import Discovery from '../utils/onvif-discovery';
 import { getMAC } from 'node-arp';
+import ping from 'ping'
 
 class CamerasController {
     constructor(nvr, logTcp) {
@@ -52,11 +53,14 @@ class CamerasController {
             const foundCam = camsByMac[cam.mac];
             // IF found ip of the camera by mac AND new IP different from old IP THEN update new IP to CMS
             if (!!foundCam) {
-                if (cam.hostname !== foundCam.hostname) await updateCameraIp(this.nvr.macAddress, foundCam.hostname, cam.mac);
-                cam.updateInfo(foundCam)          
+                if (cam.hostname !== foundCam.hostname)
+                    await updateCameraIp(this.nvr.macAddress, foundCam.hostname, cam.mac);
+                cam.updateInfo(foundCam)
             }
 
-            const isOnline = !!foundCam || await cam.isOnline()
+            // const isOnline = !!foundCam || await cam.isOnline()
+            const isOnline = !!foundCam || await ping.promise.probe(cam.hostname).then(rs => rs.alive)
+
             if (isOnline) {
                 //CHECK CAMERA ONLINE
                 logger.info(`CHECK CAMERA IP:${cam.hostname} MAC: ${cam.mac} ONLINE`)
